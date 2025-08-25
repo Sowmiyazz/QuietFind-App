@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "800633614231",
+    "project_id": "quietfindapp-987db",
+    "storage_bucket": "quietfindapp-987db.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:800633614231:android:561d8d6e2a55309fb79ed2",
+        "android_client_info": {
+          "package_name": "com.example.quietfind_new"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCE20gINxl92gnz3PKXUewBZbKW7e45nZM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
