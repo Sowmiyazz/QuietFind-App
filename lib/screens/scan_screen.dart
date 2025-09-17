@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:noise_meter/noise_meter.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class SoundScanPage extends StatefulWidget {
   const SoundScanPage({super.key});
@@ -13,33 +14,70 @@ class _SoundScanPageState extends State<SoundScanPage> {
   String statusText = "";
   IconData volumeIcon = Icons.volume_up;
 
-  void startFakeScan() {
+  NoiseMeter? _noiseMeter;
+  bool _isRecording = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _noiseMeter = NoiseMeter();
+  }
+
+  Future<void> startRealScan() async {
+    // ✅ Ask for microphone permission
+    var status = await Permission.microphone.request();
+    if (!status.isGranted) {
+      setState(() {
+        resultText = "Microphone permission denied ❌";
+        statusText = "Please enable mic access in settings.";
+      });
+      return;
+    }
+
     setState(() {
       resultText = "Scanning...";
       statusText = "";
     });
 
-    Future.delayed(const Duration(seconds: 2), () {
-      final randomDb = Random().nextInt(50) + 30; // 30 - 80 dB
-      String level = "";
-      String suggestion = "";
+    try {
+      if (!_isRecording) {
+        _isRecording = true;
+        _noiseMeter!.noise.listen((event) {
+          final double decibel = event.meanDecibel;
 
-      if (randomDb < 40) {
-        level = "Very Quiet 🌿";
-        suggestion = "Perfect for Reading";
-      } else if (randomDb < 60) {
-        level = "Moderate 🛋️";
-        suggestion = "Ideal for Studying";
-      } else {
-        level = "Noisy 🔊";
-        suggestion = "Avoid for Focus Tasks";
+          String level = "";
+          String suggestion = "";
+
+          if (decibel < 40) {
+            level = "Very Quiet 🌿";
+            suggestion = "Perfect for Reading";
+          } else if (decibel < 60) {
+            level = "Moderate 🛋️";
+            suggestion = "Ideal for Studying";
+          } else {
+            level = "Noisy 🔊";
+            suggestion = "Avoid for Focus Tasks";
+          }
+
+          setState(() {
+            resultText = "Detected: ${decibel.toStringAsFixed(1)} dB – $level";
+            statusText = suggestion;
+          });
+        }, onError: (err) {
+          setState(() {
+            resultText = "Error reading noise ❌";
+            statusText = err.toString();
+          });
+          _isRecording = false;
+        });
       }
-
+    } catch (e) {
       setState(() {
-        resultText = "Detected: $randomDb dB – $level";
-        statusText = suggestion;
+        resultText = "Error starting scan ❌";
+        statusText = e.toString();
       });
-    });
+      _isRecording = false;
+    }
   }
 
   @override
@@ -74,16 +112,16 @@ class _SoundScanPageState extends State<SoundScanPage> {
               const SizedBox(height: 60),
 
               // Scan Prompt
-              Text(
+              const Text(
                 "Tap to scan the environment",
-                style: const TextStyle(fontSize: 18, color: Colors.white),
+                style: TextStyle(fontSize: 18, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
 
               // Microphone Button
               GestureDetector(
-                onTap: startFakeScan,
+                onTap: startRealScan,
                 child: const CircleAvatar(
                   radius: 60,
                   backgroundColor: Color(0xFF3F7056),
@@ -97,7 +135,7 @@ class _SoundScanPageState extends State<SoundScanPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3F7056),
+                    color: Color(0xFF3F7056),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
