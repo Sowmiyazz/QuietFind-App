@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
@@ -25,18 +27,36 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     super.dispose();
   }
 
-  void _submitFeedback() {
-    // For now, just show a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Feedback submitted!')),
-    );
+  Future<void> _submitFeedback() async {
+    final prefs = await SharedPreferences.getInstance();
 
-    // Clear fields
+    final feedback = {
+      'type': _selectedType,
+      'location': _locationController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    // Load existing feedbacks
+    final existing = prefs.getStringList('feedbacks') ?? [];
+    existing.add(jsonEncode(feedback));
+
+    // Save back to local storage
+    await prefs.setStringList('feedbacks', existing);
+
+    // Clear form
     _locationController.clear();
     _descriptionController.clear();
-    setState(() {
-      _selectedType = 'Suggest location';
-    });
+    setState(() => _selectedType = 'Suggest location');
+
+    // Confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✅ Feedback submitted successfully!'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -51,6 +71,49 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history, color: Colors.white),
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              final feedbacks = prefs.getStringList('feedbacks') ?? [];
+              showDialog(
+                context: context,
+                builder: (_) => AlertDialog(
+                  backgroundColor: const Color(0xFF3F7056),
+                  title: const Text('Previous Feedbacks', style: TextStyle(color: Colors.white)),
+                  content: feedbacks.isEmpty
+                      ? const Text('No feedbacks yet.', style: TextStyle(color: Colors.white70))
+                      : SizedBox(
+                          width: double.maxFinite,
+                          height: 300,
+                          child: ListView(
+                            children: feedbacks.map((f) {
+                              final data = jsonDecode(f);
+                              return ListTile(
+                                title: Text(
+                                  "${data['type']} - ${data['location']}",
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                subtitle: Text(
+                                  data['description'],
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -70,7 +133,10 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 child: DropdownButtonFormField<String>(
                   value: _selectedType,
                   items: _types
-                      .map((type) => DropdownMenuItem(value: type, child: Text(type)))
+                      .map((type) => DropdownMenuItem(
+                            value: type,
+                            child: Text(type),
+                          ))
                       .toList(),
                   onChanged: (value) => setState(() => _selectedType = value!),
                   dropdownColor: const Color(0xFF3F7056),
@@ -89,7 +155,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 controller: _locationController,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: "Address, Name",
+                  hintText: "Address or Name",
                   hintStyle: const TextStyle(color: Colors.white54),
                   filled: true,
                   fillColor: const Color(0xFF3F7056),
@@ -123,7 +189,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
               const SizedBox(height: 28),
 
-              // Submit Button
               Center(
                 child: ElevatedButton(
                   onPressed: _submitFeedback,
@@ -139,7 +204,6 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
               const SizedBox(height: 20),
 
-              // Footer
               const Center(
                 child: Text(
                   "Thanks for improving QuietFind!",
