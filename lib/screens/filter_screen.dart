@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'place_data.dart';
+import 'place_model.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({super.key});
@@ -15,37 +17,31 @@ class _FilterScreenState extends State<FilterScreen> {
   String _searchText = '';
   String _sortOrder = 'Ascending';
 
-  final List<Map<String, dynamic>> _places = [
-    {'name': 'Café', 'db': 52, 'type': 'Cafe'},
-    {'name': 'Library', 'db': 38, 'type': 'Library'},
-    {'name': 'Park', 'db': 45, 'type': 'Park'},
-  ];
-
-  List<Map<String, dynamic>> _filteredPlaces = [];
+  List<Place> _filteredPlaces = [];
 
   @override
   void initState() {
     super.initState();
-    _applyFilters(); // Initial filtered list
+    _applyFilters();
   }
 
   void _applyFilters() {
     setState(() {
-      _filteredPlaces = _places.where((place) {
-        if (place['db'] > _dbRange) return false;
-        if (!_showPark && place['type'] == 'Park') return false;
-        if (!_showLibrary && place['type'] == 'Library') return false;
+      _filteredPlaces = allPlaces.where((place) {
+        if (place.db > _dbRange) return false;
+        if (!_showPark && place.type == "Park") return false;
+        if (!_showLibrary && place.type == "Library") return false;
         if (_searchText.isNotEmpty &&
-            !place['name'].toLowerCase().contains(_searchText.toLowerCase())) {
+            !place.name.toLowerCase().contains(_searchText.toLowerCase())) {
           return false;
         }
         return true;
       }).toList();
 
       if (_sortOrder == 'Ascending') {
-        _filteredPlaces.sort((a, b) => a['db'].compareTo(b['db']));
+        _filteredPlaces.sort((a, b) => a.db.compareTo(b.db));
       } else {
-        _filteredPlaces.sort((a, b) => b['db'].compareTo(a['db']));
+        _filteredPlaces.sort((a, b) => b.db.compareTo(a.db));
       }
     });
   }
@@ -60,6 +56,10 @@ class _FilterScreenState extends State<FilterScreen> {
       _sortOrder = 'Ascending';
     });
     _applyFilters();
+  }
+
+  void _applyAndReturn() {
+    Navigator.pop(context, _filteredPlaces); // send back to Explore screen
   }
 
   @override
@@ -77,23 +77,15 @@ class _FilterScreenState extends State<FilterScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.filter_alt, color: Colors.white),
-          ),
-        ],
         elevation: 0,
       ),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
+      body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8),
-        color: const Color(0xFF6E9C84),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Filter By Type, Distance & Noise Level", style: TextStyle(fontSize: 16, color: Colors.white70)),
+            const Text("Filter By Type, Distance & Noise Level",
+                style: TextStyle(fontSize: 16, color: Colors.white70)),
             const SizedBox(height: 16),
 
             // Search Bar
@@ -105,9 +97,14 @@ class _FilterScreenState extends State<FilterScreen> {
                 prefixIcon: const Icon(Icons.search, color: Colors.white),
                 filled: true,
                 fillColor: const Color(0xFF3F7056),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
               ),
-              onChanged: (value) => setState(() => _searchText = value),
+              onChanged: (value) {
+                setState(() => _searchText = value);
+                _applyFilters();
+              },
             ),
             const SizedBox(height: 16),
 
@@ -129,13 +126,14 @@ class _FilterScreenState extends State<FilterScreen> {
             Slider(
               value: _dbRange,
               min: 30,
-              max: 80,
-              divisions: 10,
+              max: 90,
+              divisions: 12,
               label: '${_dbRange.round()} dB',
               activeColor: Colors.white,
               inactiveColor: Colors.white24,
               onChanged: (value) {
                 setState(() => _dbRange = value);
+                _applyFilters();
               },
             ),
 
@@ -145,7 +143,10 @@ class _FilterScreenState extends State<FilterScreen> {
                   value: _showPark,
                   activeColor: Colors.white,
                   checkColor: const Color(0xFF3F7056),
-                  onChanged: (value) => setState(() => _showPark = value!),
+                  onChanged: (value) {
+                    setState(() => _showPark = value!);
+                    _applyFilters();
+                  },
                 ),
                 const Text("Park", style: TextStyle(color: Colors.white)),
                 const SizedBox(width: 16),
@@ -153,7 +154,10 @@ class _FilterScreenState extends State<FilterScreen> {
                   value: _showLibrary,
                   activeColor: Colors.white,
                   checkColor: const Color(0xFF3F7056),
-                  onChanged: (value) => setState(() => _showLibrary = value!),
+                  onChanged: (value) {
+                    setState(() => _showLibrary = value!);
+                    _applyFilters();
+                  },
                 ),
                 const Text("Library", style: TextStyle(color: Colors.white)),
               ],
@@ -169,7 +173,10 @@ class _FilterScreenState extends State<FilterScreen> {
                   child: Text(value, style: const TextStyle(color: Colors.white)),
                 );
               }).toList(),
-              onChanged: (value) => setState(() => _sortOrder = value!),
+              onChanged: (value) {
+                setState(() => _sortOrder = value!);
+                _applyFilters();
+              },
             ),
 
             const SizedBox(height: 12),
@@ -178,7 +185,7 @@ class _FilterScreenState extends State<FilterScreen> {
             Row(
               children: [
                 ElevatedButton(
-                  onPressed: _applyFilters,
+                  onPressed: _applyAndReturn,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: const Color(0xFF3F7056),
@@ -210,7 +217,8 @@ class _FilterScreenState extends State<FilterScreen> {
                     final place = _filteredPlaces[index];
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       decoration: BoxDecoration(
                         color: const Color(0xFF3F7056),
                         borderRadius: BorderRadius.circular(16),
@@ -218,8 +226,12 @@ class _FilterScreenState extends State<FilterScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(place['name'], style: const TextStyle(fontSize: 18, color: Colors.white)),
-                          Text('${place['db']} dB', style: const TextStyle(fontSize: 16, color: Colors.white70)),
+                          Text(place.name,
+                              style: const TextStyle(
+                                  fontSize: 18, color: Colors.white)),
+                          Text('${place.db} dB',
+                              style: const TextStyle(
+                                  fontSize: 16, color: Colors.white70)),
                         ],
                       ),
                     );
