@@ -2,11 +2,31 @@ import 'package:flutter/material.dart';
 import 'bottom_nav_bar.dart';
 import 'filter_screen.dart';
 import 'saved_spots_screen.dart';
-import 'place_data.dart'; // shared data file
-import 'place_model.dart'; // place model
+import 'place_data.dart';
+import 'place_model.dart';
 
-class ExploreScreen extends StatelessWidget {
+class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
+
+  @override
+  State<ExploreScreen> createState() => _ExploreScreenState();
+}
+
+class _ExploreScreenState extends State<ExploreScreen> {
+  List<Place> displayedPlaces = List.from(allPlaces); // Initially show all
+
+  Future<void> _openFilterScreen() async {
+    final filtered = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FilterScreen()),
+    );
+
+    if (filtered != null && filtered is List<Place>) {
+      setState(() {
+        displayedPlaces = filtered;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +39,7 @@ class ExploreScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title + Top Buttons
+              // Header row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -35,12 +55,7 @@ class ExploreScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const FilterScreen()),
-                          );
-                        },
+                        onPressed: _openFilterScreen,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3F7056),
                           foregroundColor: Colors.white,
@@ -48,7 +63,6 @@ class ExploreScreen extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          textStyle: const TextStyle(fontSize: 14),
                         ),
                         child: const Text("Filter"),
                       ),
@@ -58,7 +72,7 @@ class ExploreScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const SavedSpotsScreen()),
-                          );
+                          ).then((_) => setState(() {})); // Refresh after returning
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3F7056),
@@ -67,7 +81,6 @@ class ExploreScreen extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          textStyle: const TextStyle(fontSize: 14),
                         ),
                         child: const Text("List View"),
                       ),
@@ -75,11 +88,10 @@ class ExploreScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
 
-              // Subtitle
               const Text(
-                "Tap a location to view sound level",
+                "Tap a location to view or save spot",
                 style: TextStyle(fontSize: 16, color: Colors.white70),
               ),
               const SizedBox(height: 16),
@@ -94,12 +106,11 @@ class ExploreScreen extends StatelessWidget {
                   ),
                   child: Stack(
                     children: [
-                      // 🔹 Dynamically generated map markers
-                      ...allPlaces.asMap().entries.map((entry) {
+                      // Dynamic markers
+                      ...displayedPlaces.asMap().entries.map((entry) {
                         int index = entry.key;
                         Place place = entry.value;
 
-                        // Random positions (temporary for UI demo)
                         double left = 40.0 + (index * 50);
                         double top = 60.0 + (index * 70);
 
@@ -107,44 +118,17 @@ class ExploreScreen extends StatelessWidget {
                           left: left,
                           top: top,
                           isQuiet: place.isQuiet,
+                          label: "${place.name} (${place.db} dB)",
+                          isSaved: place.isSaved,
+                          onToggleSave: () {
+                            setState(() {
+                              place.isSaved = !place.isSaved;
+                            });
+                          },
                         );
                       }).toList(),
 
-                      // Tooltip (example only)
-                      Positioned(
-                        left: 100,
-                        top: 170,
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2F5A45),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Library",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                "38 dB",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Zoom and center buttons
+                      // Map control buttons
                       Positioned(
                         bottom: 20,
                         right: 16,
@@ -169,20 +153,38 @@ class ExploreScreen extends StatelessWidget {
     );
   }
 
-  // Location Marker
-  Widget _buildMarker({required double left, required double top, required bool isQuiet}) {
+  Widget _buildMarker({
+    required double left,
+    required double top,
+    required bool isQuiet,
+    required String label,
+    required bool isSaved,
+    required VoidCallback onToggleSave,
+  }) {
     return Positioned(
       left: left,
       top: top,
-      child: Icon(
-        Icons.location_on,
-        color: isQuiet ? Colors.greenAccent : Colors.redAccent,
-        size: 30,
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: onToggleSave,
+            child: Icon(
+              isSaved ? Icons.star : Icons.location_on,
+              color: isSaved
+                  ? Colors.yellowAccent
+                  : (isQuiet ? Colors.greenAccent : Colors.redAccent),
+              size: 32,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
+        ],
       ),
     );
   }
 
-  // Round Buttons
   Widget _mapControlButton(IconData icon) {
     return CircleAvatar(
       radius: 22,

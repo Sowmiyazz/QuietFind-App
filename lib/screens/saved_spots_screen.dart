@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'place_data.dart';
+import 'place_model.dart';
 
 class SavedSpotsScreen extends StatefulWidget {
   const SavedSpotsScreen({super.key});
@@ -8,15 +10,10 @@ class SavedSpotsScreen extends StatefulWidget {
 }
 
 class _SavedSpotsScreenState extends State<SavedSpotsScreen> {
-  final List<Map<String, dynamic>> savedSpots = [
-    {'name': 'Park', 'db': 39, 'status': 'Usually Quiet', 'isFavorite': true, 'isEnabled': true},
-    {'name': 'Library', 'db': 34, 'status': 'Very Quiet', 'isFavorite': false, 'isEnabled': false},
-    {'name': 'Office', 'db': 41, 'status': 'Usually Quiet', 'isFavorite': false, 'isEnabled': false},
-    {'name': 'Café', 'db': 44, 'status': 'Quieter Than Normal', 'isFavorite': false, 'isEnabled': false},
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final savedPlaces = allPlaces.where((p) => p.isSaved).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF6E9C84),
       appBar: AppBar(
@@ -34,19 +31,17 @@ class _SavedSpotsScreenState extends State<SavedSpotsScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Your favorite quiet places",
-              style: TextStyle(color: Colors.white70, fontSize: 16),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: savedSpots.length,
+        child: savedPlaces.isEmpty
+            ? const Center(
+                child: Text(
+                  "No saved places yet 😴",
+                  style: TextStyle(color: Colors.white70, fontSize: 18),
+                ),
+              )
+            : ListView.builder(
+                itemCount: savedPlaces.length,
                 itemBuilder: (context, index) {
-                  final spot = savedSpots[index];
+                  final place = savedPlaces[index];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -57,12 +52,12 @@ class _SavedSpotsScreenState extends State<SavedSpotsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Name and Status
+                        // Place name + info
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              spot['name'],
+                              place.name,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -71,51 +66,30 @@ class _SavedSpotsScreenState extends State<SavedSpotsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "${spot['db']} dB   ${spot['status']}",
+                              "${place.db} dB   ${place.type}",
                               style: const TextStyle(color: Colors.white70, fontSize: 14),
                             ),
                           ],
                         ),
 
-                        // Toggle + Star
-                        Row(
-                          children: [
-                            // Switch Toggle
-                            Switch(
-                              value: spot['isEnabled'],
-                              onChanged: (value) {
-                                setState(() {
-                                  savedSpots[index]['isEnabled'] = value;
-                                });
-                              },
-                              activeColor: Colors.white,
-                            ),
-                            const SizedBox(width: 8),
-
-                            // Star Icon Toggle
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  savedSpots[index]['isFavorite'] =
-                                      !savedSpots[index]['isFavorite'];
-                                });
-                              },
-                              child: Icon(
-                                spot['isFavorite'] ? Icons.star : Icons.star_border,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                          ],
+                        // Toggle save
+                        IconButton(
+                          icon: Icon(
+                            place.isSaved ? Icons.star : Icons.star_border,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              place.isSaved = !place.isSaved;
+                            });
+                          },
                         ),
                       ],
                     ),
                   );
                 },
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
