@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'bottom_nav_bar.dart'; // Ensure this exists
+import 'bottom_nav_bar.dart';
 import 'filter_screen.dart';
 import 'saved_spots_screen.dart';
+import 'place_data.dart'; // shared data file
+import 'place_model.dart'; // place model
+
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({super.key});
 
@@ -34,8 +37,8 @@ class ExploreScreen extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () {
                           Navigator.push(
-                             context,
-                             MaterialPageRoute(builder: (context) => const FilterScreen()),
+                            context,
+                            MaterialPageRoute(builder: (context) => const FilterScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -55,7 +58,7 @@ class ExploreScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const SavedSpotsScreen()),
-               );
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3F7056),
@@ -91,14 +94,23 @@ class ExploreScreen extends StatelessWidget {
                   ),
                   child: Stack(
                     children: [
-                      // Map Markers
-                      _buildMarker(left: 40, top: 60, isQuiet: true),
-                      _buildMarker(left: 100, top: 120, isQuiet: false),
-                      _buildMarker(left: 160, top: 220, isQuiet: true),
-                      _buildMarker(left: 230, top: 90, isQuiet: false),
-                      _buildMarker(left: 280, top: 160, isQuiet: true),
+                      // 🔹 Dynamically generated map markers
+                      ...allPlaces.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        Place place = entry.value;
 
-                      // Tooltip
+                        // Random positions (temporary for UI demo)
+                        double left = 40.0 + (index * 50);
+                        double top = 60.0 + (index * 70);
+
+                        return _buildMarker(
+                          left: left,
+                          top: top,
+                          isQuiet: place.isQuiet,
+                        );
+                      }).toList(),
+
+                      // Tooltip (example only)
                       Positioned(
                         left: 100,
                         top: 170,
@@ -179,4 +191,3 @@ class ExploreScreen extends StatelessWidget {
     );
   }
 }
-
