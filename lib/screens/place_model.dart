@@ -1,6 +1,6 @@
 class Place {
   String name;
-  int db; // decibel level
+  double db; // decibel level
   String type; // e.g., Cafe, Park, Library
   bool isQuiet;
   bool isSaved;
