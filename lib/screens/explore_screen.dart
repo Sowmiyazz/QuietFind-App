@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+
 import 'bottom_nav_bar.dart';
 import 'filter_screen.dart';
 import 'saved_spots_screen.dart';
@@ -16,14 +19,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
   List<Place> displayedPlaces = [];
   bool isLoading = true;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late GoogleMapController _mapController;
+  Position? _currentPosition;
+  final Set<Marker> _markers = {};
 
   @override
   void initState() {
     super.initState();
+    _handleLocationPermission();
+    _loadCurrentLocation();
     _loadPlaces();
   }
 
-  /// 🧩 Load all places from Firestore
+  /// Load all places from Firestore and create map markers
   Future<void> _loadPlaces() async {
     try {
       final snapshot = await _firestore.collection('places').get();
@@ -33,12 +41,39 @@ class _ExploreScreenState extends State<ExploreScreen> {
           final data = doc.data() as Map<String, dynamic>;
           return Place(
             name: data['name'] ?? '',
-            db: (data['db'] is num) ? (data['db'] as num).toDouble() : 0.0,
+            db: (data['db'] as num?)?.toDouble() ?? 0.0,
             type: data['type'] ?? '',
             isQuiet: data['isQuiet'] ?? true,
             isSaved: data['isSaved'] ?? false,
+            latitude: (data['latitude'] as num?)?.toDouble() ?? 0.0,
+            longitude: (data['longitude'] as num?)?.toDouble() ?? 0.0,
           );
         }).toList();
+
+        _markers.clear();
+        for (var place in displayedPlaces) {
+          if (place.latitude != 0.0 && place.longitude != 0.0) {
+            _markers.add(
+              Marker(
+                markerId: MarkerId(place.name),
+                position: LatLng(place.latitude, place.longitude),
+                icon: BitmapDescriptor.defaultMarkerWithHue(
+                  place.isSaved
+                      ? BitmapDescriptor.hueYellow
+                      : (place.isQuiet
+                          ? BitmapDescriptor.hueGreen
+                          : BitmapDescriptor.hueRed),
+                ),
+                infoWindow: InfoWindow(
+                  title: place.name,
+                  snippet: '${place.type} • ${place.db.toStringAsFixed(1)} dB',
+                  onTap: () => _toggleSavePlace(place),
+                ),
+              ),
+            );
+          }
+        }
+
         isLoading = false;
       });
       print("✅ Places loaded: ${displayedPlaces.length}");
@@ -48,7 +83,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  /// ⭐ Toggle saving a place
+  /// Toggle saving a place to saved_spots collection
   Future<void> _toggleSavePlace(Place place) async {
     try {
       setState(() {
@@ -61,6 +96,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
           'db': place.db,
           'type': place.type,
           'isQuiet': place.isQuiet,
+          'latitude': place.latitude,
+          'longitude': place.longitude,
         });
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('${place.name} saved!')));
@@ -77,6 +114,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('${place.name} removed!')));
       }
+
+      // Update markers with new saved state
+      _loadPlaces();
     } catch (e) {
       print("⚠️ Error saving/removing spot: $e");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,21 +125,28 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  /// 🔍 Open FilterScreen and receive results
-  Future<void> _openFilterScreen() async {
-    final filtered = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const FilterScreen()),
-    );
+  /// Handle location permissions
+  Future<void> _handleLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+  }
 
-    // If results came from FilterScreen
-    if (filtered != null && filtered is List<Place>) {
-      setState(() {
-        displayedPlaces = filtered;
-      });
-    } else {
-      // If no filters applied or cleared → reload all
-      _loadPlaces();
+  /// Load current user location
+  Future<void> _loadCurrentLocation() async {
+    _currentPosition = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+    setState(() {});
+  }
+
+  /// Center map on current location
+  void _goToCurrentLocation() {
+    if (_currentPosition != null) {
+      _mapController.animateCamera(CameraUpdate.newLatLng(
+        LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+      ));
     }
   }
 
@@ -108,176 +155,128 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF6E9C84),
       bottomNavigationBar: const BottomNavBar(currentIndex: 1),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: isLoading || _currentPosition == null
+          ? const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            )
+          : SafeArea(
+              child: Column(
                 children: [
-                  const Text(
-                    "Quiet Places Map",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  // Header with filter and list view
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Quiet Places Map",
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Column(
+                          children: [
+                            ElevatedButton(
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const FilterScreen()),
+                                );
+                                _loadPlaces();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3F7056),
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text("Filter"),
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SavedSpotsScreen()),
+                                ).then((_) => _loadPlaces());
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3F7056),
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text("List View"),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _openFilterScreen,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3F7056),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+
+                  // Google Map
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        GoogleMap(
+                          initialCameraPosition: CameraPosition(
+                            target: LatLng(_currentPosition!.latitude,
+                                _currentPosition!.longitude),
+                            zoom: 14,
+                          ),
+                          onMapCreated: (GoogleMapController controller) {
+                            _mapController = controller;
+                          },
+                          markers: _markers,
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: false,
+                          zoomControlsEnabled: false,
+                        ),
+
+                        // Map buttons
+                        Positioned(
+                          bottom: 20,
+                          right: 16,
+                          child: Column(
+                            children: [
+                              _mapControlButton(Icons.add, () {
+                                _mapController.animateCamera(
+                                  CameraUpdate.zoomIn(),
+                                );
+                              }),
+                              const SizedBox(height: 8),
+                              _mapControlButton(Icons.remove, () {
+                                _mapController.animateCamera(
+                                  CameraUpdate.zoomOut(),
+                                );
+                              }),
+                              const SizedBox(height: 8),
+                              _mapControlButton(Icons.my_location, () {
+                                _goToCurrentLocation();
+                              }),
+                            ],
                           ),
                         ),
-                        child: const Text("Filter"),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) =>
-                                    const SavedSpotsScreen()),
-                          ).then((_) => _loadPlaces());
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3F7056),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text("List View"),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-
-              const Text(
-                "Tap a location to view or save spot",
-                style: TextStyle(fontSize: 16, color: Colors.white70),
-              ),
-              const SizedBox(height: 16),
-
-              Expanded(
-                child: isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                    : displayedPlaces.isEmpty
-                        ? const Center(
-                            child: Text(
-                              "No places found 😕",
-                              style: TextStyle(
-                                  color: Colors.white70, fontSize: 18),
-                            ),
-                          )
-                        : Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF5D856F),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Stack(
-                              children: [
-                                // Markers
-                                ...displayedPlaces.asMap().entries.map((entry) {
-                                  int index = entry.key;
-                                  Place place = entry.value;
-
-                                  double left = 40.0 + (index * 50);
-                                  double top = 60.0 + (index * 70);
-
-                                  return _buildMarker(
-                                    left: left,
-                                    top: top,
-                                    isQuiet: place.isQuiet,
-                                    label:
-                                        "${place.name} (${place.db.toStringAsFixed(1)} dB)",
-                                    isSaved: place.isSaved,
-                                    onToggleSave: () =>
-                                        _toggleSavePlace(place),
-                                  );
-                                }).toList(),
-
-                                // Map control buttons
-                                Positioned(
-                                  bottom: 20,
-                                  right: 16,
-                                  child: Column(
-                                    children: [
-                                      _mapControlButton(Icons.add),
-                                      const SizedBox(height: 8),
-                                      _mapControlButton(Icons.remove),
-                                      const SizedBox(height: 8),
-                                      _mapControlButton(Icons.my_location),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMarker({
-    required double left,
-    required double top,
-    required bool isQuiet,
-    required String label,
-    required bool isSaved,
-    required VoidCallback onToggleSave,
-  }) {
-    return Positioned(
-      left: left,
-      top: top,
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: onToggleSave,
-            child: Icon(
-              isSaved ? Icons.star : Icons.location_on,
-              color: isSaved
-                  ? Colors.yellowAccent
-                  : (isQuiet ? Colors.greenAccent : Colors.redAccent),
-              size: 32,
             ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 12),
-          ),
-        ],
-      ),
     );
   }
 
-  Widget _mapControlButton(IconData icon) {
+  Widget _mapControlButton(IconData icon, VoidCallback onPressed) {
     return CircleAvatar(
       radius: 22,
       backgroundColor: const Color(0xFF3F7056),
-      child: Icon(icon, color: Colors.white),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white),
+        onPressed: onPressed,
+      ),
     );
   }
 }

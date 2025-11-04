@@ -37,15 +37,20 @@ class _FilterScreenState extends State<FilterScreen> {
       final snapshot = await FirebaseFirestore.instance.collection('places').get();
 
       _allPlaces = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Place(
-          name: data['name'] ?? '',
-          db: (data['db'] is num) ? (data['db'] as num).toDouble() : 0.0,
-          type: data['type'] ?? '',
-          isQuiet: data['isQuiet'] ?? true,
-          isSaved: data['isSaved'] ?? false,
-        );
-      }).toList();
+      final data = doc.data() as Map<String, dynamic>;
+      return Place(
+    name: data['name'] ?? '',
+    db: (data['db'] is num) ? (data['db'] as num).toDouble() : 0.0,
+    type: data['type'] ?? '',
+    isQuiet: data['isQuiet'] ?? true,
+    isSaved: data['isSaved'] ?? false,
+    
+    // ✅ Add this part:
+    latitude: (data['latitude'] as num?)?.toDouble() ?? 0.0,
+    longitude: (data['longitude'] as num?)?.toDouble() ?? 0.0,
+  );
+}).toList();
+
 
       _applyFilters(); // show filtered view initially
     } catch (e) {

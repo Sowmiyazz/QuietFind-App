@@ -1,13 +1,13 @@
 import 'place_model.dart';
 
-// ✅ Original place list
+// ✅ Updated place list with lat/lng
 List<Place> allPlaces = [
-  Place(name: "Library", db: 38, type: "Study Zone", isQuiet: true),
-  Place(name: "Central Park", db: 45, type: "Park", isQuiet: true),
-  Place(name: "Café Aroma", db: 70, type: "Café", isQuiet: false),
-  Place(name: "Bus Stop", db: 85, type: "Transit", isQuiet: false),
-  Place(name: "Lakeside", db: 42, type: "Relax Area", isQuiet: true),
-  Place(name: "Food Court", db: 75, type: "Canteen", isQuiet: false),
+  Place(name: "Library", db: 38, type: "Study Zone", isQuiet: true, latitude: 37.7749, longitude: -122.4194),
+  Place(name: "Central Park", db: 45, type: "Park", isQuiet: true, latitude: 40.7851, longitude: -73.9683),
+  Place(name: "Café Aroma", db: 70, type: "Café", isQuiet: false, latitude: 34.0522, longitude: -118.2437),
+  Place(name: "Bus Stop", db: 85, type: "Transit", isQuiet: false, latitude: 51.5074, longitude: -0.1278),
+  Place(name: "Lakeside", db: 42, type: "Relax Area", isQuiet: true, latitude: 48.8566, longitude: 2.3522),
+  Place(name: "Food Court", db: 75, type: "Canteen", isQuiet: false, latitude: 35.6895, longitude: 139.6917),
 ];
 
 // ✅ Current filtered places (initially same as all)

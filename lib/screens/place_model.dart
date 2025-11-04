@@ -4,6 +4,8 @@ class Place {
   String type; // e.g., Cafe, Park, Library
   bool isQuiet;
   bool isSaved;
+  double latitude; // latitude
+  double longitude; // longitude
 
   Place({
     required this.name,
@@ -11,5 +13,7 @@ class Place {
     required this.type,
     this.isQuiet = true,
     this.isSaved = false,
+    required this.latitude,
+    required this.longitude,
   });
 }
