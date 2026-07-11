@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'bottom_nav_bar.dart';
 import 'scan_screen.dart';
-import 'explore_screen.dart'; // ✅ Make sure this file exists
+import 'explore_screen.dart'; // Make sure this file exists
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -70,7 +70,7 @@ class HomeScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const SoundScanPage()), // ✅ correct widget
+                            builder: (context) => const SoundScanPage()), // correct widget
                       );
                     },
                     icon: const Icon(Icons.headphones),

@@ -122,7 +122,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       {bool isPassword = false}) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9), // ✅ FIXED
+        color: Colors.white.withValues(alpha: 0.9), // FIXED
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(

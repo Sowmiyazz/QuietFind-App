@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // ✅ Needed for StreamSubscription
+import 'dart:async'; // Needed for StreamSubscription
 import 'package:noise_meter/noise_meter.dart';
 
 class SoundScanPage extends StatefulWidget {
@@ -18,7 +18,7 @@ class _SoundScanPageState extends State<SoundScanPage> {
   String statusText = "";
 
   void startScan() {
-    // ✅ Updated: use noiseEvents instead of noiseStream
+    // Updated: use noiseEvents instead of noiseStream
     _noiseSubscription = _noiseMeter.noise.listen((event) {
       double decibel = event.meanDecibel;
 
@@ -78,7 +78,7 @@ class _SoundScanPageState extends State<SoundScanPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ✅ Top Bar
+              // Top Bar
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

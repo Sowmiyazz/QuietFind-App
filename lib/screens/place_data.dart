@@ -1,6 +1,6 @@
 import 'place_model.dart';
 
-// ✅ Updated place list with lat/lng
+// Updated place list with lat/lng
 List<Place> allPlaces = [
   Place(name: "Library", db: 38, type: "Study Zone", isQuiet: true, latitude: 37.7749, longitude: -122.4194),
   Place(name: "Central Park", db: 45, type: "Park", isQuiet: true, latitude: 40.7851, longitude: -73.9683),
@@ -10,10 +10,10 @@ List<Place> allPlaces = [
   Place(name: "Food Court", db: 75, type: "Canteen", isQuiet: false, latitude: 35.6895, longitude: 139.6917),
 ];
 
-// ✅ Current filtered places (initially same as all)
+// Current filtered places (initially same as all)
 List<Place> filteredPlaces = List.from(allPlaces);
 
-// ✅ Apply filter logic
+// Apply filter logic
 void applyFilter({
   double? maxDb,
   String? type,

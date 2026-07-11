@@ -10,13 +10,13 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ✅ Add this line to test Firestore after initialization
+  // Add this line to test Firestore after initialization
   await testFirestoreConnection();
 
   runApp(const MyApp());
 }
 
-// ✅ Firestore test function
+// Firestore test function
 Future<void> testFirestoreConnection() async {
   try {
     final snapshot = await FirebaseFirestore.instance.collection('places').get();
@@ -27,10 +27,10 @@ Future<void> testFirestoreConnection() async {
     if (snapshot.docs.isEmpty) {
       print('No documents found in "places" collection.');
     } else {
-      print('✅ Firestore connection successful!');
+      print('Firestore connection successful!');
     }
   } catch (e) {
-    print('❌ Firestore connection failed: $e');
+    print('Firestore connection failed: $e');
   }
 }
 

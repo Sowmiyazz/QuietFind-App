@@ -56,7 +56,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       });
 
     } catch (e) {
-      print("❌ Error fetching places: $e");
+      print("Error fetching places: $e");
       setState(() => isLoading = false);
     }
   }
@@ -98,7 +98,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         _markers = displayedPlaces.map((p) => _createMarker(p)).toSet();
       });
     } catch (e) {
-      print("⚠️ Error saving/removing spot: $e");
+      print("Error saving/removing spot: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Error updating saved spot')),
       );

@@ -52,7 +52,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     // Confirmation
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('✅ Feedback submitted successfully!'),
+        content: Text('Feedback submitted successfully!'),
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 2),
       ),

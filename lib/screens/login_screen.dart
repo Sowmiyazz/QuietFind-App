@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text.trim(),
       );
 
-      if (!mounted) return; // ✅ ensure context is valid
+      if (!mounted) return; // ensure context is valid
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     await showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog( // ✅ renamed to avoid shadowing
+      builder: (dialogContext) => AlertDialog( // renamed to avoid shadowing
         title: const Text("Reset Password"),
         content: TextField(
           controller: resetController,
@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           TextButton(
             onPressed: () async {
-              Navigator.of(dialogContext).pop(); // ✅ close dialog safely
+              Navigator.of(dialogContext).pop(); // close dialog safely
               try {
                 await FirebaseAuth.instance.sendPasswordResetEmail(
                   email: resetController.text.trim(),
@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Email Field
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9), // ✅ fixed
+                    color: Colors.white.withValues(alpha: 0.9), // fixed
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
@@ -122,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Password Field
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9), // ✅ fixed
+                    color: Colors.white.withValues(alpha: 0.9), // fixed
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(

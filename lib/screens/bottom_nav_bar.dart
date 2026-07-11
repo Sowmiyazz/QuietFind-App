@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'explore_screen.dart';
-import 'profile_screen.dart'; // ✅ Now it's safe to import
+import 'profile_screen.dart'; 
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;

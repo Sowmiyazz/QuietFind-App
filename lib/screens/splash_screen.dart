@@ -15,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Wait for 5 seconds then navigate to Login Page
     Future.delayed(const Duration(seconds: 5), () {
-      if (!mounted) return; // ✅ Prevents context use if disposed
+      if (!mounted) return; // Prevents context use if disposed
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),

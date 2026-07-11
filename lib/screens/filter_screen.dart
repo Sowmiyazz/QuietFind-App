@@ -31,7 +31,7 @@ class _FilterScreenState extends State<FilterScreen> {
     _loadPlaces();
   }
 
-  /// 🔹 Load all places once from Firestore
+  ///Load all places once from Firestore
   Future<void> _loadPlaces() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('places').get();
@@ -45,7 +45,7 @@ class _FilterScreenState extends State<FilterScreen> {
     isQuiet: data['isQuiet'] ?? true,
     isSaved: data['isSaved'] ?? false,
     
-    // ✅ Add this part:
+    //Add this part:
     latitude: (data['latitude'] as num?)?.toDouble() ?? 0.0,
     longitude: (data['longitude'] as num?)?.toDouble() ?? 0.0,
   );
@@ -54,13 +54,13 @@ class _FilterScreenState extends State<FilterScreen> {
 
       _applyFilters(); // show filtered view initially
     } catch (e) {
-      print("❌ Error loading places: $e");
+      print("Error loading places: $e");
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  /// 🔹 Apply filters locally (no Firestore query)
+  ///Apply filters locally (no Firestore query)
   void _applyFilters() {
     setState(() {
       List<String> selectedTypes = [];
@@ -87,7 +87,7 @@ class _FilterScreenState extends State<FilterScreen> {
     });
   }
 
-  /// 🔹 Reset filters
+  /// Reset filters
   void _resetFilters() {
     setState(() {
       _dbRange = 90;
@@ -99,7 +99,7 @@ class _FilterScreenState extends State<FilterScreen> {
     _applyFilters();
   }
 
-  /// 🔹 Confirm & return filtered list to ExploreScreen
+  /// Confirm & return filtered list to ExploreScreen
   void _confirmFilters() {
     Navigator.pop(context, _filteredPlaces);
   }
@@ -139,7 +139,7 @@ class _FilterScreenState extends State<FilterScreen> {
                       style: TextStyle(fontSize: 16, color: Colors.white70)),
                   const SizedBox(height: 16),
 
-                  // 🔍 Search Bar
+                  // Search Bar
                   TextField(
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
@@ -160,7 +160,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 🎚️ dB Range
+                  // dB Range
                   const Text("Maximum dB Level",
                       style: TextStyle(color: Colors.white)),
                   Slider(
@@ -177,7 +177,7 @@ class _FilterScreenState extends State<FilterScreen> {
                     },
                   ),
 
-                  // 🏷️ Type checkboxes
+                  // Type checkboxes
                   Wrap(
                     spacing: 10,
                     runSpacing: -10,
@@ -217,7 +217,7 @@ class _FilterScreenState extends State<FilterScreen> {
 
                   const SizedBox(height: 12),
 
-                  // 🔄 Sort dropdown
+                  // Sort dropdown
                   DropdownButton<String>(
                     value: _sortOrder,
                     dropdownColor: const Color(0xFF3F7056),
@@ -241,7 +241,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // 📋 Filtered list preview
+                  // Filtered list preview
                   Expanded(
                     child: ListView.builder(
                       itemCount: _filteredPlaces.length,
@@ -279,7 +279,7 @@ class _FilterScreenState extends State<FilterScreen> {
                     ),
                   ),
 
-                  // ✅ Confirm Button
+                  // Confirm Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
